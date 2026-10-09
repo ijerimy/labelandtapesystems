@@ -1,0 +1,28 @@
+# Label Tape Systems website, VPS deployment behind Nginx Proxy Manager (NPM).
+#
+# The site container joins NPM's Docker network and publishes NO ports.
+# In NPM, point the proxy host at:  lts-website : 8080  (scheme http)
+#
+# NPM_NETWORK comes from .env (written by deploy/setup-vps.sh).
+# For a local preview with a Cloudflare quick tunnel instead, use:
+#   docker compose -f docker-compose.preview.yml up -d --build
+
+name: lts-website
+
+services:
+  web:
+    build: .
+    image: lts-website:latest
+    container_name: lts-website
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    networks: [npm]
+
+networks:
+  npm:
+    external: true
+    name: ${NPM_NETWORK:?Set NPM_NETWORK in .env (run deploy/setup-vps.sh)}

@@ -1,0 +1,6 @@
+# PREVIEW BUILD: blocks all crawlers. At launch replace with:
+#   User-agent: *
+#   Allow: /
+#   Sitemap: https://www.labelandtapesystems.com/sitemap.xml
+User-agent: *
+Disallow: /

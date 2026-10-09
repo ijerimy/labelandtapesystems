@@ -1,0 +1,50 @@
+# Label Tape Systems preview site + temporary Cloudflare quick tunnel.
+#
+#   docker compose up -d --build
+#   docker compose logs cloudflared      <- find the https://....trycloudflare.com URL
+#   docker compose down                  <- stops the site and kills the public URL
+#
+# Isolation:
+#   - "tunnel" is an internal network: only web + cloudflared are on it, no internet, no LAN.
+#   - cloudflared is told to forward to exactly one place (http://web:8080). It has no other routes.
+#   - web's second network ("preview") exists only to publish 127.0.0.1:8080 so you can view it on
+#     this PC. Bound to localhost, so nothing else on your LAN can reach it. nginx makes no outbound
+#     connections. For a tunnel-only setup, delete the "ports" block and "preview" from web.
+#   - Both containers: non-root, read-only filesystem, all Linux capabilities dropped.
+
+name: lts-website
+
+services:
+  web:
+    build: .
+    image: lts-website:preview
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    networks: [tunnel, preview]
+    ports:
+      - "127.0.0.1:8080:8080"     # local preview: http://localhost:8080 (this PC only)
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://web:8080
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /home/nonroot/.cloudflared
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    networks: [tunnel, egress]
+    depends_on:
+      web:
+        condition: service_healthy
+
+networks:
+  tunnel:
+    internal: true    # no route out; web <-> cloudflared only
+  egress: {}          # cloudflared's outbound connection to Cloudflare
+  preview: {}         # only used to publish the localhost port
