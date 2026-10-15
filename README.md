@@ -9,27 +9,22 @@ Docker Desktop (Windows) or Docker Engine + Compose v2.
 ## How it deploys
 
 ```
-git push  ->  GitHub Actions builds the image  ->  ghcr.io/ijerimy/labelandtapesystems:latest
-          ->  Portainer (polling) pulls it and redeploys  ->  NPM serves lts-labels.com
+git push  ->  Portainer polls GitHub every 5 min  ->  rebuilds the image on the VPS  ->  NPM serves lts-labels.com
 ```
 
-- **Build:** `.github/workflows/docker-image.yml` runs on every push to `main` (about 2 to 3 minutes), for both amd64 and arm64.
-- **Run:** Portainer stack from this Git repo, compose path `docker-compose.yml`. The container joins Nginx Proxy Manager's network and opens no ports.
+Portainer stack from this Git repo, compose path `docker-compose.yml`. `pull_policy: build` makes Portainer CE rebuild on each update. The container joins Nginx Proxy Manager's network and opens no ports.
 
 ### One-time Portainer setup
 
-1. **GitHub tokens** (both read-only):
-   - Fine-grained token, repository `labelandtapesystems` only, Contents: Read. Used by Portainer to read the repo.
-   - Classic token with only `read:packages`. Used by Portainer to pull the image.
-2. **Portainer > Registries > Add registry > Custom:** URL `ghcr.io`, authentication on, username `ijerimy`, password = the `read:packages` token.
-3. **Portainer > Stacks > Add stack > Repository:**
-   - Repository URL `https://github.com/ijerimy/labelandtapesystems`, reference `refs/heads/main`, authentication on (username `ijerimy`, the fine-grained token)
+1. **GitHub token** (read-only): fine-grained, repository `labelandtapesystems` only, Contents: Read.
+2. **Portainer > Stacks > Add stack > Repository:**
+   - URL `https://github.com/ijerimy/labelandtapesystems`, reference `refs/heads/main`, authentication on (username `ijerimy`, the token)
    - Compose path `docker-compose.yml`
-   - GitOps updates: on, Polling, every `5m`, **Re-pull image** on, **Force redeployment** on
-   - Environment variable: `NPM_NETWORK` = the network NPM is on (Portainer > Containers > your NPM container > Networks)
-4. **Nginx Proxy Manager > Add Proxy Host:** `lts-labels.com` (and `www.lts-labels.com` if pointed), scheme `http`, forward host `lts-website`, port `8080`, Block Common Exploits on. SSL tab: Let's Encrypt, Force SSL.
+   - GitOps updates: on, Polling, `5m`
+   - Environment variable: `NPM_NETWORK` = the network NPM is on
+3. **Nginx Proxy Manager > Add Proxy Host:** `lts-labels.com`, scheme `http`, forward host `lts-website`, port `8080`. SSL: Let's Encrypt, Force SSL.
 
-**Day to day:** `git push`, and the site updates within about 10 minutes (build + next poll).
+**Day to day:** `git push`, and the site updates within about 5 minutes.
 
 ## Local preview (optional)
 
