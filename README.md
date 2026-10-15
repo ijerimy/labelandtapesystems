@@ -1,47 +1,35 @@
 # Label Tape Systems Website
 
-Static site (8 pages) served by unprivileged nginx, with an optional temporary Cloudflare quick tunnel for sharing a preview link. No database, no build step, no outside requests (fonts are bundled).
+Static site (8 pages) served by unprivileged nginx. Built by GitHub Actions, run by Portainer on the VPS behind Nginx Proxy Manager. No database, no build step, no outside requests (fonts are bundled).
 
 ## Requirements
 
 Docker Desktop (Windows) or Docker Engine + Compose v2.
 
-## Deploy to the VPS (GitHub + Nginx Proxy Manager)
-
-The VPS clones this private repo, builds the container, and checks GitHub every 5 minutes. When a new commit lands on `main` it pulls and rebuilds automatically.
-
-**One-time setup** (on the VPS as `opc`):
-
-From your PC, copy the setup script up, then run it on the VPS:
+## How it deploys
 
 ```
-scp deploy/setup-vps.sh opc@129.80.113.77:~
-ssh opc@129.80.113.77
-sudo bash setup-vps.sh git@github.com:<owner>/<repo>.git
+git push  ->  GitHub Actions builds the image  ->  ghcr.io/ijerimy/labelandtapesystems:latest
+          ->  Portainer (polling) pulls it and redeploys  ->  NPM serves lts-labels.com
 ```
 
-The script:
-1. Creates a **read-only deploy key** and shows it for you to add under the GitHub repo's Settings > Deploy keys
-2. Clones the repo to `/opt/lts-website`
-3. Finds Nginx Proxy Manager's Docker network and joins the site to it (no ports published)
-4. Builds and starts the `lts-website` container
-5. Installs `lts-website-update.timer` (checks every 5 min)
+- **Build:** `.github/workflows/docker-image.yml` runs on every push to `main` (about 2 to 3 minutes), for both amd64 and arm64.
+- **Run:** Portainer stack from this Git repo, compose path `docker-compose.yml`. The container joins Nginx Proxy Manager's network and opens no ports.
 
-**Nginx Proxy Manager > Add Proxy Host:**
-- Domain: `lts.clarifiedtech.net`
-- Scheme `http`, Forward Hostname `lts-website`, Port `8080`
-- SSL: request a Let's Encrypt certificate, turn on Force SSL
+### One-time Portainer setup
 
-Make sure the DNS A record for `lts.clarifiedtech.net` points to the VPS first, or Let's Encrypt will fail.
+1. **GitHub tokens** (both read-only):
+   - Fine-grained token, repository `labelandtapesystems` only, Contents: Read. Used by Portainer to read the repo.
+   - Classic token with only `read:packages`. Used by Portainer to pull the image.
+2. **Portainer > Registries > Add registry > Custom:** URL `ghcr.io`, authentication on, username `ijerimy`, password = the `read:packages` token.
+3. **Portainer > Stacks > Add stack > Repository:**
+   - Repository URL `https://github.com/ijerimy/labelandtapesystems`, reference `refs/heads/main`, authentication on (username `ijerimy`, the fine-grained token)
+   - Compose path `docker-compose.yml`
+   - GitOps updates: on, Polling, every `5m`, **Re-pull image** on, **Force redeployment** on
+   - Environment variable: `NPM_NETWORK` = the network NPM is on (Portainer > Containers > your NPM container > Networks)
+4. **Nginx Proxy Manager > Add Proxy Host:** `lts-labels.com` (and `www.lts-labels.com` if pointed), scheme `http`, forward host `lts-website`, port `8080`, Block Common Exploits on. SSL tab: Let's Encrypt, Force SSL.
 
-**Day to day:** edit locally, `git push`, and the site updates within 5 minutes.
-
-| Task | Command (on VPS) |
-|---|---|
-| Update now | `sudo lts-website-update --force` |
-| Update log | `journalctl -u lts-website-update -n 50` |
-| Site logs | `docker logs lts-website` |
-| Stop auto-updates | `sudo systemctl disable --now lts-website-update.timer` |
+**Day to day:** `git push`, and the site updates within about 10 minutes (build + next poll).
 
 ## Local preview (optional)
 

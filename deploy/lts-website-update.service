@@ -1,8 +1,0 @@
-[Unit]
-Description=Pull and rebuild the Label Tape Systems website if GitHub changed
-After=network-online.target docker.service
-Wants=network-online.target
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/lts-website-update
