@@ -1,9 +1,8 @@
 # Label Tape Systems website: Portainer stack (Git repository) behind Nginx Proxy Manager.
 #
-# Portainer clones this repo and builds the image on the VPS. "pull_policy: build" makes it
-# rebuild on every GitOps redeploy, so a git push updates the site (Portainer CE compatible).
+# GitHub Actions builds the image, pushes it to GHCR, and updates the tag below.
+# That commit triggers Portainer's GitOps polling to redeploy. Don't edit the image line by hand.
 # The container joins NPM's Docker network and publishes NO ports.
-# In NPM, proxy lts-labels.com -> http://lts-website:8080
 #
 # Portainer stack environment variable required:
 #   NPM_NETWORK = the Docker network your Nginx Proxy Manager container is on
@@ -13,9 +12,7 @@
 
 services:
   web:
-    build: .
-    pull_policy: build
-    image: lts-website:latest
+    image: ghcr.io/ijerimy/labelandtapesystems:latest
     container_name: lts-website
     restart: unless-stopped
     read_only: true

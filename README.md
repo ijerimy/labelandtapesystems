@@ -9,22 +9,21 @@ Docker Desktop (Windows) or Docker Engine + Compose v2.
 ## How it deploys
 
 ```
-git push  ->  Portainer polls GitHub every 5 min  ->  rebuilds the image on the VPS  ->  NPM serves lts-labels.com
+git push  ->  GitHub Actions builds the image, pushes ghcr.io/ijerimy/labelandtapesystems:<commit>
+          ->  Actions commits the new tag into docker-compose.yml
+          ->  Portainer (polling, 5 min) sees that commit and redeploys  ->  NPM serves lts-labels.com
 ```
 
-Portainer stack from this Git repo, compose path `docker-compose.yml`. `pull_policy: build` makes Portainer CE rebuild on each update. The container joins Nginx Proxy Manager's network and opens no ports.
+Why: Portainer can't build images through an agent environment, and its "re-pull image" option is Business Edition only. Pinning the tag per commit makes Portainer CE pull the new image on its own.
+
+**Before editing locally, run `git pull`.** Every deploy adds a small commit from GitHub Actions.
 
 ### One-time Portainer setup
 
-1. **GitHub token** (read-only): fine-grained, repository `labelandtapesystems` only, Contents: Read.
-2. **Portainer > Stacks > Add stack > Repository:**
-   - URL `https://github.com/ijerimy/labelandtapesystems`, reference `refs/heads/main`, authentication on (username `ijerimy`, the token)
-   - Compose path `docker-compose.yml`
-   - GitOps updates: on, Polling, `5m`
-   - Environment variable: `NPM_NETWORK` = the network NPM is on
-3. **Nginx Proxy Manager > Add Proxy Host:** `lts-labels.com`, scheme `http`, forward host `lts-website`, port `8080`. SSL: Let's Encrypt, Force SSL.
-
-**Day to day:** `git push`, and the site updates within about 5 minutes.
+1. **GitHub tokens** (both read-only): fine-grained (repo `labelandtapesystems`, Contents: Read) for the repo, classic (`read:packages` only) for the image.
+2. **Portainer > Registries > Add registry > Custom:** `ghcr.io`, username `ijerimy`, password = the `read:packages` token.
+3. **Portainer > (VPS environment) > Stacks > Add stack > Repository:** URL `https://github.com/ijerimy/labelandtapesystems`, ref `refs/heads/main`, auth with the fine-grained token, compose path `docker-compose.yml`, GitOps polling `5m`, env var `NPM_NETWORK`.
+4. **NPM proxy host:** `lts-labels.com` -> `http://lts-website:8080`, Let's Encrypt, Force SSL.
 
 ## Local preview (optional)
 
