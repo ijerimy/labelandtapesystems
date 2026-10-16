@@ -57,14 +57,18 @@ The preview is kept **out of search engines**: `robots.txt` blocks all crawlers 
 | `_source/photos/` | Every original image pulled from the old site (not served) |
 | `nginx.conf` | Server config, security headers, and 301 redirects from old page URLs |
 
-## Old URL redirects
+## Clean URLs and redirects
 
-| Old page | New page |
+Pages are served without `.html` (`/about`, `/laundry-labeling-systems#navigator`). The files on disk still end in `.html`; nginx finds them. Any address ending in `.html` gets a single 301 to the clean version, so old links and bookmarks keep working. All of this is the `map` block at the top of `nginx.conf`.
+
+| Old address | Goes to |
 |---|---|
-| /index.html, /about.html | same names |
-| /Just_Ask.html | /customers.html |
-| /How_it_Works.html | /laundry-labeling-systems.html |
-| /page04.html | /laundry-labeling-systems.html#print-options |
-| /Kits.html | /vision-id-kit.html |
-| /Warranties.html | /support.html |
-| /page05.html, /Contact-us.html | /order.html |
+| /index.html | / |
+| /about.html (and any other /page.html) | /about (same name, no .html) |
+| /Just_Ask.html | /customers |
+| /How_it_Works.html | /laundry-labeling-systems |
+| /page04.html | /laundry-labeling-systems#print-options |
+| /Kits.html | /vision-id-kit |
+| /Warranties.html | /support |
+| /page05.html, /Contact-us.html | /order |
+| /denture-id-kit.html | /vision-id-kit (denture kit discontinued) |
