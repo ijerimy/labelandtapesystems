@@ -470,5 +470,19 @@ p { margin: 0 0 1em; }
 }
 
 /* Two product cards on the home page (denture kit removed) */
-.prod-grid { grid-template-columns: repeat(2, 1fr); max-width: 900px; }
-@media (max-width: 960px) { .prod-grid { grid-template-columns: 1fr; } }
+/* Product lineup: 6 cards, 3 x 2 */
+.prod-grid { grid-template-columns: repeat(3, 1fr); max-width: none; }
+.prod-photo { height: 200px; }
+.prod-photo img { max-height: 170px; max-width: 100%; height: auto; object-fit: contain; }
+.prod h3 { font-size: 1.25rem; }
+.new { display: inline-block; vertical-align: middle; margin-left: 8px; background: var(--t-400); color: #fff; font-size: .68rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; padding: 4px 10px; clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
+@media (max-width: 960px) { .prod-grid { grid-template-columns: repeat(2, 1fr); max-width: none; } }
+@media (max-width: 600px) { .prod-grid { grid-template-columns: 1fr; max-width: 560px; } }
+
+/* Print options: 2 x 2 under the Navigator */
+.system-row { grid-template-columns: repeat(2, 1fr); }
+.system-mail { grid-column: auto; }
+.system-photos.single { background: #fff; padding: 14px; border-bottom: 1px solid var(--line); }
+.system-photos.single img { width: auto; max-width: 100%; max-height: 190px; object-fit: contain; }
+@media (max-width: 960px) { .system-mail { grid-column: auto; } }
+@media (max-width: 700px) { .system-row { grid-template-columns: 1fr; } }
