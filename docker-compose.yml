@@ -12,7 +12,7 @@
 
 services:
   web:
-    image: ghcr.io/ijerimy/labelandtapesystems:9fec2003175e971f1f03a26354f5e08485f730bc
+    image: ghcr.io/ijerimy/labelandtapesystems:a602d4671e50111ae63be1d116aafde7f861b648
     container_name: lts-website
     restart: unless-stopped
     read_only: true
